@@ -13,6 +13,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin("http://localhost:5173/");
+        config.addAllowedOrigin("https://frabjous-heliotrope-3148d9.netlify.app/");
         config.addAllowedMethod("*"); // Allow all HTTP methods
         config.addAllowedHeader("*"); // Allow all headers
         config.setAllowCredentials(true);

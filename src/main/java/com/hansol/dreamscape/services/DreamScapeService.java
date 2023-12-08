@@ -25,6 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -39,6 +40,12 @@ public class DreamScapeService {
     ChatService chatService;
 
     public Mono<CreateImageResponse> processPrompt(String rawUserPrompt) throws IOException {
+
+        Date currentDate = new Date();
+        String formattedDate = currentDate.toString();
+
+        System.out.println("=========================================");
+        System.out.println(formattedDate);
 
         String userPrompt = rawUserPrompt;
 

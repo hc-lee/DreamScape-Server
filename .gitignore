@@ -14,8 +14,12 @@ application.properties
 .springBeans
 .sts4-cache
 
-.src/test/
-.src/main/java/resources/
+.mvn/
+mvnw
+mwnw.cmd
+
+src/test/
+src/main/java/resources/
 
 ### IntelliJ IDEA ###
 .idea
@@ -38,3 +42,6 @@ build/
 
 ### Others ###
 .resources/
+
+Dockerfile
+mvnw.cmd
