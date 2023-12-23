@@ -2,7 +2,7 @@ package com.hansol.dreamscape.controllers;
 
 import com.hansol.dreamscape.services.DreamScapeService;
 import com.hansol.dreamscape.transferobjects.UserPromptDTO;
-import io.github.reactiveclown.openaiwebfluxclient.client.images.CreateImageResponse;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,18 +14,20 @@ import reactor.core.publisher.Mono;
 public class DreamScapeController {
 
     @Autowired
-    DreamScapeService dreamScapeService;
+    private DreamScapeService dreamScapeService;
 
     // Image generation endpoint. Takes a String and boolean as a request body and returns a Mono of CreateImageResponse.
     @CrossOrigin
     @PostMapping("/generate_image")
-    public Mono<CreateImageResponse> generateImage(@RequestBody UserPromptDTO userPromptJSON) {
+    public Mono<?> generateImage(@RequestBody UserPromptDTO userPromptJSON) {
         try {
             return dreamScapeService.processPrompt(userPromptJSON.getUserPrompt());
         } catch (Exception e) {
-            return Mono.error(e
-                    .getCause()
-                    .initCause(new Throwable("An error has occurred while generating your image.")));
+            // Return a Mono.just containing a JSON dictionary with error code 500 and Exception message.
+            JSONObject errorJSON = new JSONObject();
+            errorJSON.put("error_message", e.getMessage());
+            errorJSON.put("error_code", 500);
+            return Mono.just(errorJSON.toString());
         }
 
     }

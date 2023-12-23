@@ -1,5 +1,8 @@
 package com.hansol.dreamscape.services;
 
+import com.hansol.dreamscape.clients.OpenAiClients;
+import com.hansol.dreamscape.exceptions.LanguageDetectLibraryException;
+import com.hansol.dreamscape.exceptions.TranslationServiceException;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.ngram.NgramExtractors;
@@ -8,11 +11,6 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
-import io.github.reactiveclown.openaiwebfluxclient.client.chat.ChatService;
-import io.github.reactiveclown.openaiwebfluxclient.client.chat.CreateChatCompletionRequest;
-import io.github.reactiveclown.openaiwebfluxclient.client.chat.CreateChatCompletionResponse;
-import io.github.reactiveclown.openaiwebfluxclient.client.chat.MessageData;
-import io.github.reactiveclown.openaiwebfluxclient.client.images.CreateImageRequest;
 import io.github.reactiveclown.openaiwebfluxclient.client.images.CreateImageResponse;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,47 +22,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
 @Service
 public class DreamScapeService {
 
-    // OpenAI images API client
     @Autowired
-    io.github.reactiveclown.openaiwebfluxclient.client.images.ImagesService ImagesService;
+    private OpenAiClients openAiClients;
 
-    // OpenAI chat API client
-    @Autowired
-    ChatService chatService;
-
-    public Mono<CreateImageResponse> processPrompt(String rawUserPrompt) throws IOException {
+    public Mono<CreateImageResponse> processPrompt(String rawUserPrompt) {
 
         Date currentDate = new Date();
         String formattedDate = currentDate.toString();
-
         System.out.println("=========================================");
         System.out.println(formattedDate);
 
+        if (rawUserPrompt == null) {
+            System.out.println("Empty user prompt detected");
+            throw new NullPointerException("User prompt is null.");
+        }
+
         String userPrompt = rawUserPrompt;
 
-        //load all languages to detect:
-        List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-
-        //build language detector:
-        LanguageDetector languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
-                .withProfiles(languageProfiles)
-                .build();
-
-        //create a text object factory
-        TextObjectFactory textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
-
-        //query:
-        TextObject textObject = textObjectFactory.forText(userPrompt);
-        String lang = languageDetector.detect(textObject).get().getLanguage();
-
         try {
+            // Detect the language of the user prompt and translate it to English if necessary.
+            String lang = detectLanguage(userPrompt);
 
             if (!lang.equals("en")) {
                 // Translate the non-English user prompt to English using Rob's microservice.
@@ -74,32 +57,15 @@ public class DreamScapeService {
 
             System.out.println("User prompt: " + userPrompt);
 
-            // Process the user description into a suitable DALL·E prompt using GPT-3. Await response.
-            CreateChatCompletionResponse response = chatService.createChatCompletion(
-                    CreateChatCompletionRequest
-                            .builder("gpt-3.5-turbo", List.of(new MessageData("user", "Describe this scene visually in less than 30 simple words. If personal pronouns are used, include the people: " + userPrompt)))
-                            .n(1)
-                            .build()
-            ).block();
-
-            // Some scuffed way of circumventing library bugs. (i.e. not being able to access choices.get(0).message())
-            String dallEPrompt = response.choices().toString();
-            int contentIndex = dallEPrompt.indexOf("content=");
-            int endIndex = dallEPrompt.indexOf("], finishReason=stop]]");
-            String content = dallEPrompt.substring(contentIndex + "content=".length(), endIndex);
+            // Call the GPT3 model to generate a dall-e prompt.
+            String content = openAiClients.generateGpt3Prompt(userPrompt);
 
             // Generate an image using the dall-e prompt.
-            return ImagesService.createImage(
-                    CreateImageRequest
-                            .builder(content + " The image is realistic.")
-                            .size("512x512")
-                            .build());
+            return openAiClients.generateDallEImage(content);
 
-        } catch (Error e) {
-            // Error occurred while calling OpenAPI client.
-            return Mono.error(e
-                    .getCause()
-                    .initCause(new Throwable("An error has occurred while generating your image.")));
+        } catch (Exception e) {
+            System.out.println("Error occurred in the image generation service.");
+            return Mono.error(e);
         }
     }
 
@@ -119,9 +85,32 @@ public class DreamScapeService {
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
             JSONObject responseJSON = new JSONObject(responseEntity.getBody());
             return responseJSON.getString("translated");
+
         } catch (Exception e) {
             System.out.println("Error occurred while translating prompt.");
-            return "Error occurred while translating prompt.";
+            throw new TranslationServiceException("Error occurred while translating prompt.");
+        }
+    }
+
+    // Helper function to detect the language of a string.
+    public String detectLanguage(String prompt) {
+        try {
+            // Load all languages to detect
+            List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAllBuiltIn();
+
+            // Build language detector
+            LanguageDetector languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
+                    .withProfiles(languageProfiles)
+                    .build();
+            TextObjectFactory textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
+
+            // Query
+            TextObject textObject = textObjectFactory.forText(prompt);
+
+            return languageDetector.detect(textObject).get().getLanguage();
+
+        } catch (Exception e) {
+            throw new LanguageDetectLibraryException("Error occurred while detecting language.");
         }
     }
 
