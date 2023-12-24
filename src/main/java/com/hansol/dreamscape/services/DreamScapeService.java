@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class DreamScapeService {
@@ -38,9 +39,9 @@ public class DreamScapeService {
         System.out.println("=========================================");
         System.out.println(formattedDate);
 
-        if (rawUserPrompt == null) {
+        if (Objects.equals(rawUserPrompt, "") || rawUserPrompt == null) {
             System.out.println("Empty user prompt detected");
-            throw new NullPointerException("User prompt is null.");
+            throw new NullPointerException("User prompt is empty or null.");
         }
 
         String userPrompt = rawUserPrompt;
@@ -54,7 +55,6 @@ public class DreamScapeService {
                 System.out.println("Detected non-English prompt. Translating...");
                 userPrompt = translate(userPrompt);
             }
-
             System.out.println("User prompt: " + userPrompt);
 
             // Call the GPT3 model to generate a dall-e prompt.
@@ -110,6 +110,7 @@ public class DreamScapeService {
             return languageDetector.detect(textObject).get().getLanguage();
 
         } catch (Exception e) {
+            System.out.println("Error occurred while detecting language.");
             throw new LanguageDetectLibraryException("Error occurred while detecting language.");
         }
     }

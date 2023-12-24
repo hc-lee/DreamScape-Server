@@ -16,6 +16,7 @@ import java.util.List;
 
 @Service
 public class OpenAiClients {
+
     // OpenAI images API client
     @Autowired
     private io.github.reactiveclown.openaiwebfluxclient.client.images.ImagesService ImagesService;

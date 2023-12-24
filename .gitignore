@@ -18,7 +18,6 @@ application.properties
 mvnw
 mwnw.cmd
 
-src/test/
 src/main/java/resources/
 
 ### IntelliJ IDEA ###
