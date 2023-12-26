@@ -1,6 +1,7 @@
 package com.hansol.dreamscape.services;
 
 import com.hansol.dreamscape.clients.OpenAiClients;
+import com.hansol.dreamscape.exceptions.InvalidUserPromptException;
 import com.hansol.dreamscape.exceptions.LanguageDetectLibraryException;
 import com.hansol.dreamscape.exceptions.TranslationServiceException;
 import com.optimaize.langdetect.LanguageDetector;
@@ -41,7 +42,7 @@ public class DreamScapeService {
 
         if (Objects.equals(rawUserPrompt, "") || rawUserPrompt == null) {
             System.out.println("Empty user prompt detected");
-            throw new NullPointerException("User prompt is empty or null.");
+            throw new InvalidUserPromptException("User prompt is empty or null.");
         }
 
         String userPrompt = rawUserPrompt;

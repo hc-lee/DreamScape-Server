@@ -30,7 +30,7 @@ public class DreamScapeControllerTest {
     private DreamScapeService dreamScapeService;
 
     @Test
-    void test_DreamScapeController_GenerateImage_Is_Successful() {
+    void test_DreamScapeController_GenerateImage_Returns_ImageUrl() throws Exception{
 
         // Mock a response from the OpenAI client.
         CreateImageResponse mockResponse = new CreateImageResponse(
@@ -54,7 +54,7 @@ public class DreamScapeControllerTest {
     }
 
     @Test
-    void test_DreamScapeController_GenerateImage_Throws_Exception() throws Exception {
+    void test_DreamScapeController_GenerateImage_Successfully_Throws_Exception() throws Exception {
 
         // When
         when(dreamScapeService.processPrompt(""))

@@ -15,7 +15,6 @@ public class DreamScapeController {
     @Autowired
     private DreamScapeService dreamScapeService;
 
-    // Image generation endpoint. Takes a String and boolean as a request body and returns a Mono of CreateImageResponse.
     @CrossOrigin
     @PostMapping("/generate_image")
     public Mono<?> generateImage(@RequestBody UserPromptDTO userPromptJSON) {
