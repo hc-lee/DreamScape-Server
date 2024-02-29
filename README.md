@@ -33,7 +33,7 @@
 
 The server is currently deployed in a Docker container on an AWS EC2 instance. Currently, there is a single REST endpoint that accepts the user prompt and returns a URL to the generated image.
 
-(POST) http://54.188.27.139:8080/generate_image
+(POST) /generate_image
 
 Example request body:
 </p>
